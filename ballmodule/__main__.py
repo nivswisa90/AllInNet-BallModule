@@ -9,8 +9,7 @@ def main():
     if len(sys.argv) > 1:
         min_ball_throws = sys.argv[1]
     else:
-        min_ball_throws = 3
-        # raise Exception("Not enough arguments specified")
+        raise Exception("Not enough arguments specified")
     ballModule = Detection(min_ball_throws)
     payload = ballModule.get_payload()
     try:
