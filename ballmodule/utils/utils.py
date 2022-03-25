@@ -5,7 +5,7 @@ import pathlib
 import requests
 from cvzone import ColorFinder
 
-frames_path = pathlib.Path(__file__).parent.parent.parent/'Frames'
+frames_path = pathlib.Path(__file__).parent.parent.parent / 'Frames'
 
 
 def open_configuration():
@@ -25,16 +25,19 @@ def send_results(payload):
 
 
 def send_frames():
-    multiple_files = []
-    directory = pathlib.Path(__file__).parent.parent.parent / 'Frames'
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        if os.path.isfile(f):
-            file = ('multi-files', (f, open(f, 'rb'), 'image/jpg'))
-            multiple_files.append(file)
-    # res = requests.post('http://allinnet.online/api/training/results/upload', files=multiple_files)
-    res = requests.post('http://localhost:5001/api/training/results/upload', files=multiple_files)
-    print(res.text)
+    try:
+        multiple_files = []
+        directory = pathlib.Path(__file__).parent.parent.parent / 'Frames'
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            if os.path.isfile(f):
+                file = ('multi-files', (f, open(f, 'rb'), 'image/jpg'))
+                multiple_files.append(file)
+        res = requests.post('http://allinnet.online/api/training/results/upload', files=multiple_files)
+        # res = requests.post('http://localhost:5001/api/training/results/upload', files=multiple_files)
+        print(res.text)
+    except requests.exceptions.RequestException as e:  # This is the correct syntax
+        raise SystemExit(e)
 
 
 def find_colors(img, hsv_val):

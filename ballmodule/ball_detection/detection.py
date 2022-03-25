@@ -3,7 +3,6 @@ import cv2
 import cvzone
 from ballmodule import config
 from ballmodule.utils.utils import find_colors, frames_path
-import uuid
 
 
 class Detection:
@@ -29,7 +28,7 @@ class Detection:
         }
 
         # Video
-        self.video_name = pathlib.Path(__file__).parent.parent.parent/config['video']
+        self.video_name = pathlib.Path(__file__).parent.parent.parent / config['video']
         # config['video']
         self.limits = config['imgLimits']
         self.min_limit_y, self.max_limit_y, self.min_limit_x, self.max_limit_x, self.minimal_x = self.limits['minY'], \
@@ -151,8 +150,7 @@ class Detection:
     def save_throw(self, img_contours):
         throw_counter = self.payload['totalThrows']
         # frames_path = 'Frames'
-        uid = uuid.uuid1()
-        current_frame = f'{frames_path}/{uid}.jpg'
+        current_frame = f'{frames_path}/frame{throw_counter}.jpg'
         if throw_counter > 0:
             cv2.imwrite(current_frame, img_contours)
 
