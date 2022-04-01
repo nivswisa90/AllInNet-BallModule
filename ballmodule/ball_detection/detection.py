@@ -59,7 +59,7 @@ class Detection:
         self.ball_bbox_positions = []
         self.was_successful = 0
 
-    def detect_throws(self, img):
+    def detect_throws(self, img, frame):
         # Initialization of the frame
         img_color, mask = find_colors(img, self.hsv_val)
         img_contours, contours = cvzone.findContours(img, mask, minArea=self.min_area)
@@ -106,13 +106,13 @@ class Detection:
                 # Position list holds at least 2 positions inside the imaginary rectangle bellow the hoop
                 if len(self.ball_bbox_positions) > 1:
                     self.write_throw_and_clean()
-        if self.was_successful == 1:
-            self.print_green_dots(img_contours)
-        else:
-            self.print_red_dots(img_contours)
+
+        self.print_dots(frame)
+
         if len(self.pos_list_x):
             if self.pos_list_y[-1] >= self.y_right or self.pos_list_x[-1] <= self.x_hoop:
-                self.save_throw(img_contours)
+                # img = img[10:100, :]
+                self.save_throw(frame)
         return img_contours
 
     def set_throw_position(self):
@@ -124,15 +124,13 @@ class Detection:
         elif 140 < y_position <= 250:
             self.increment_throw_position(4)
 
-    def print_green_dots(self, img_contours):
-        # Print green points
+    def print_dots(self, img_contours):
+        if self.was_successful == 1:
+            color = (0, 255, 0)
+        else:
+            color = (0, 0, 255)
         for (posX, posY) in (zip(self.pos_list_x, self.pos_list_y)):
-            cv2.circle(img_contours, (posX, posY), 5, (0, 255, 0), cv2.FILLED)
-
-    def print_red_dots(self, img_contours):
-        # Print green points
-        for (posX, posY) in (zip(self.pos_list_x, self.pos_list_y)):
-            cv2.circle(img_contours, (posX, posY), 5, (0, 0, 255), cv2.FILLED)
+            cv2.circle(img_contours, (posX + self.min_limit_x, posY + self.min_limit_y), 5, color, cv2.FILLED)
 
     def write_throw_and_clean(self):
         self.was_successful = 1
@@ -160,9 +158,10 @@ class Detection:
         while True:
             success, img = cap.read()
             if success:
+                frame = img
                 img = img[self.min_limit_y:self.max_limit_y, self.min_limit_x:self.max_limit_x]
-                imageContours = self.detect_throws(img)
-                cv2.imshow("ImageColor", imageContours)
+                imageContours = self.detect_throws(img, frame)
+                cv2.imshow("ImageColor", frame)
                 cv2.waitKey(1)
             else:
                 break
