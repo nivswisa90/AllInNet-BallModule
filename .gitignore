@@ -3,3 +3,4 @@ Frames*
 venv
 Videos
 *.pyc*
+.DS_Store
