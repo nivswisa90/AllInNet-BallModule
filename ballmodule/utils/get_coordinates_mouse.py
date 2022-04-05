@@ -3,10 +3,10 @@ import json
 import pathlib
 
 import cv2
-# from ballmodule import config
-# from ballmodule.utils.utils import open_configuration_to_write
+from ballmodule import config
+from ballmodule.utils.utils import open_configuration_to_write
 
-# video_name = pathlib.Path(__file__).parent.parent.parent / config['video']
+video_name = pathlib.Path(__file__).parent.parent.parent / config['video']
 
 
 # function to display the coordinates of
@@ -17,13 +17,9 @@ def click_event(event, x, y, flags, params):
         # displaying the coordinates
         # on the Shell
         print(x, ' ', y)
-        with open("../configs/config.json") as config_file:
-            config_object = json.load(config_file)
-        config_object['hoop']['x'] = x - config_object['imgLimits']['minX']
-        config_object['hoop']['y'] = y - config_object['imgLimits']['minY']
-        with open("../configs/config.json", 'w') as config_file:
-            json.dump(config_object, config_file)
-        # open_configuration_to_write(config)
+        config['hoop']['x'] = x - config['imgLimits']['minX']
+        config['hoop']['y'] = y - config['imgLimits']['minY']
+        open_configuration_to_write(config)
 
 
 # driver function
