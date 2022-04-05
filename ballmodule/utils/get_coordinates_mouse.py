@@ -1,5 +1,12 @@
 # importing the module
+import json
+import pathlib
+
 import cv2
+from ballmodule import config
+from ballmodule.utils.utils import open_configuration_to_write
+
+video_name = pathlib.Path(__file__).parent.parent.parent / config['video']
 
 
 # function to display the coordinates of
@@ -10,48 +17,29 @@ def click_event(event, x, y, flags, params):
         # displaying the coordinates
         # on the Shell
         print(x, ' ', y)
-
-        # displaying the coordinates
-        # on the image window
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(img, str(x) + ',' +
-                    str(y), (x, y), font,
-                    1, (255, 0, 0), 2)
-        cv2.imshow('image', img)
-
-    # checking for right mouse clicks
-    if event == cv2.EVENT_RBUTTONDOWN:
-        # displaying the coordinates
-        # on the Shell
-        print(x, ' ', y)
-
-        # displaying the coordinates
-        # on the image window
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        b = img[y, x, 0]
-        g = img[y, x, 1]
-        r = img[y, x, 2]
-        cv2.putText(img, str(b) + ',' +
-                    str(g) + ',' + str(r),
-                    (x, y), font, 1,
-                    (255, 255, 0), 2)
-        cv2.imshow('image', img)
+        config['hoop']['x'] = x - config['imgLimits']['minX']
+        config['hoop']['y'] = y - config['imgLimits']['minY']
+        open_configuration_to_write(config)
 
 
 # driver function
 if __name__ == "__main__":
     # reading the image
-    img = cv2.imread('Videos/basketPos.png', 1)
+    cap = cv2.VideoCapture(f'{video_name}')
 
-    # displaying the image
-    cv2.imshow('image', img)
+    try:
+        while True:
+            success, img = cap.read()
+            if success:
+                # displaying the image
+                cv2.imshow('image', img)
 
-    # setting mouse handler for the image
-    # and calling the click_event() function
-    cv2.setMouseCallback('image', click_event)
-
-    # wait for a key to be pressed to exit
-    cv2.waitKey(0)
-
-    # close the window
-    cv2.destroyAllWindows()
+            # setting mouse handler for the image
+            # and calling the click_event() function
+            cv2.waitKey(1)
+            cv2.setMouseCallback('image', click_event)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
+    finally:
+        # close the window
+        cv2.destroyAllWindows()
