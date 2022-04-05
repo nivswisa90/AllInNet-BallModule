@@ -25,7 +25,8 @@ def click_event(event, x, y, flags, params):
 # driver function
 if __name__ == "__main__":
     # reading the image
-    cap = cv2.VideoCapture(f'{video_name}')
+    # cap = cv2.VideoCapture(f'{video_name}')
+    cap = cv2.VideoCapture(0)
 
     try:
         while True:

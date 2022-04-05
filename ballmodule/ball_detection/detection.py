@@ -154,7 +154,8 @@ class Detection:
 
     def open_video(self):
         # for video in self.videoName:
-        cap = cv2.VideoCapture(f'{self.video_name}')
+        # cap = cv2.VideoCapture(f'{self.video_name}')
+        cap = cv2.VideoCapture(0)
         while True:
             success, img = cap.read()
             if success:
