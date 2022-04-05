@@ -15,6 +15,12 @@ def open_configuration():
     return config_object
 
 
+def open_configuration_to_write(new_file):
+    parent = pathlib.Path(__file__).parent.resolve()
+    with open(parent / "../configs/config.json", 'w') as config_file:
+        json.dump(new_file, config_file)
+
+
 def send_results(payload):
     try:
         res = requests.post('http://allinnet.online/api/training/results', data=payload)

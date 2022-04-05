@@ -65,8 +65,8 @@ class Detection:
         img_contours, contours = cvzone.findContours(img, mask, minArea=self.min_area)
 
         # BBOX, should be dynamic from the config with get_coordinates.py
-        # cv2.rectangle(img_contours, (self.xLeft, self.yLeft), (self.xRight, self.yRight), (255, 255, 0), 3)
-        # cv2.circle(img_contours, (self.xHoop, self.yHoop), 5, (255, 255, 0), cv2.FILLED)
+        # cv2.rectangle(frame, (500, 700), (650, 800), (255, 255, 0), 3)
+        # cv2.circle(frame, (80 + self.min_limit_x, 175 + self.min_limit_y), 5, (255, 0, 0), cv2.FILLED)
 
         # Ball detected
         if contours:
