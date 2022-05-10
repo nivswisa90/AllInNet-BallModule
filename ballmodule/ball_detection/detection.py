@@ -3,16 +3,16 @@ import cv2
 import cvzone
 from ballmodule import config
 from ballmodule.utils.utils import find_colors, frames_path
+import time
 
 
 class Detection:
-    def __init__(self, min_ball_throw):
-        self.json_object = ''
+    def __init__(self, training_program_id, min_request_positions):
+        # self.json_object = ''
         self.current_position = 0
 
         self.payload = {
-            "id": 1,
-            "playerId": 123,
+            "id": training_program_id,
             "counterThrowPos1": 0,
             "successfulThrowPos1": 0,
             "counterThrowPos2": 0,
@@ -23,19 +23,26 @@ class Detection:
             "successfulThrowPos4": 0,
             "counterThrowPos5": 0,
             "successfulThrowPos5": 0,
+            "counterThrowPos6": 0,
+            "successfulThrowPos6": 0,
             'totalThrows': 0,
-            'minRequest': min_ball_throw
+            "min1": int(min_request_positions[0]),
+            "min2": int(min_request_positions[1]),
+            "min3": int(min_request_positions[2]),
+            "min4": int(min_request_positions[3]),
+            "min5": int(min_request_positions[4]),
+            "min6": int(min_request_positions[5]),
         }
 
         # Video
         self.video_name = pathlib.Path(__file__).parent.parent.parent / config['video']
         # config['video']
-        self.limits = config['imgLimits']
-        self.min_limit_y, self.max_limit_y, self.min_limit_x, self.max_limit_x, self.minimal_x = self.limits['minY'], \
-                                                                                                 self.limits['maxY'], \
-                                                                                                 self.limits['minX'], \
-                                                                                                 self.limits['maxX'], \
-                                                                                                 self.limits['maxX']
+        limits = config['imgLimits']
+        self.min_limit_y, self.max_limit_y, self.min_limit_x, self.max_limit_x, self.minimal_x = limits['minY'], \
+                                                                                                 limits['maxY'], \
+                                                                                                 limits['minX'], \
+                                                                                                 limits['maxX'], \
+                                                                                                 limits['maxX']
 
         # Bbox
         self.bbox = config['bbox']
@@ -154,8 +161,9 @@ class Detection:
 
     def open_video(self):
         # for video in self.videoName:
-        # cap = cv2.VideoCapture(f'{self.video_name}')
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(f'{self.video_name}')
+
+        # cap = cv2.VideoCapture(0)
         while True:
             success, img = cap.read()
             if success:

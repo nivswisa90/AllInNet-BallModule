@@ -21,16 +21,20 @@ def open_configuration_to_write(new_file):
         json.dump(new_file, config_file)
 
 
-def send_results(payload):
+def send_results(payload, token):
     try:
-        res = requests.post('http://allinnet.online/api/training/results', data=payload)
-        # res = requests.post('http://localhost:5001/api/training/results', data=payload)
+        # res = requests.post('http://allinnet.online/api/training/results', data=payload, headers={
+        #     "x-access-token": token
+        # })
+        res = requests.post('http://localhost:5001/api/training/results', data=payload, headers={
+            "x-access-token": token
+        })
         print(res.text)
     except requests.exceptions.RequestException as e:  # This is the correct syntax
         raise SystemExit(e)
 
 
-def send_frames():
+def send_frames(token):
     try:
         multiple_files = []
         directory = pathlib.Path(__file__).parent.parent.parent / 'Frames'
@@ -39,7 +43,9 @@ def send_frames():
             if os.path.isfile(f):
                 file = ('multi-files', (f, open(f, 'rb'), 'image/jpg'))
                 multiple_files.append(file)
-        res = requests.post('http://allinnet.online/api/training/results/upload', files=multiple_files)
+        res = requests.post('http://allinnet.online/api/training/results/upload', files=multiple_files, headers={
+            "x-access-token": token
+        })
         # res = requests.post('http://localhost:5001/api/training/results/upload', files=multiple_files)
         print(res.text)
     except requests.exceptions.RequestException as e:  # This is the correct syntax
