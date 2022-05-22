@@ -1,7 +1,7 @@
 import sys
 
 from ballmodule.ball_detection.detection import Detection
-from ballmodule.utils.utils import send_results, send_frames
+from ballmodule.utils.utils import send_results, send_frames, delete_frames
 
 
 def main():
@@ -16,11 +16,15 @@ def main():
     payload = ballModule.get_payload()
     try:
         ballModule.open_video()
+        # For checking, prints the last throw also#####
+        ballModule.set_new_throw()
+        ##################
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
     finally:
         send_results(payload, token)
-        # send_frames(token)
+        send_frames(training_program_id, token)
+        delete_frames()
 
 
 if __name__ == "__main__":

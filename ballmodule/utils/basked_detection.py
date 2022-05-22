@@ -2,10 +2,10 @@ import cv2
 import cvzone
 from cvzone.ColorModule import ColorFinder
 
-cap = cv2.VideoCapture("../../Videos/sidevideo67.h264")
+# cap = cv2.VideoCapture("../../Videos/training3-sides.h264")
 
 # Color finder object, False no debug mode
-myColorFinder = ColorFinder(False)
+myColorFinder = ColorFinder(True)
 hsvVals = {'hmin': 0, 'smin': 0, 'vmin': 0, 'hmax': 28, 'smax': 122, 'vmax': 79}
 
 # Variables
@@ -19,20 +19,20 @@ hsvVals = {'hmin': 0, 'smin': 0, 'vmin': 0, 'hmax': 28, 'smax': 122, 'vmax': 79}
 
 while True:
     # Grab the image
-    success, img = cap.read()
-    # img = cv2.imread("Videos/58test.png")
+    # success, img = cap.read()
+    img = cv2.imread("../../Videos/test.png")
     # The first part is the high, the second the width
     # imgRed, _ = myColorFinder.update(img, "red")
     # imgGreen, _ = myColorFinder.update(img, "green")
     # imgBlue, _ = myColorFinder.update(img, "blue")
     # imgOrange, _ = myColorFinder.update(img, hsvVals)
-    img = img[200:450, 0:350]
+    # img = img[100:350, 0:350]
 
     # Find the color ball
     imgColor, mask = myColorFinder.update(img, hsvVals)
 
     # Find location of the ball
-    imgContours, contours = cvzone.findContours(img, mask, minArea=500)
+    imgContours, contours = cvzone.findContours(img, mask, minArea=45)
 
     if contours:
         # contours[0] is the biggest
@@ -50,4 +50,4 @@ while True:
     # cv2.imshow("Image", img)
     cv2.imshow("ImageColor", imgColor)
     # Video velocity
-    cv2.waitKey(1)
+    cv2.waitKey(90)

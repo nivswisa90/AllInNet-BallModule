@@ -6,13 +6,10 @@ from ballmodule.utils.utils import find_colors, frames_path
 import time
 
 
-# import matplotlib.pyplot as plt
-
-
 class Detection:
     def __init__(self, training_program_id, min_request_positions):
         self.current_position = 0
-        self.training_program_id = training_program_id
+
         self.payload = {
             "id": training_program_id,
             "counterThrowPos1": 0,
@@ -67,15 +64,11 @@ class Detection:
         self.pos_list_y = []
         self.ball_bbox_positions = []
         self.was_successful = 0
-        self.half_frame_x = self.max_limit_x / 2
 
     def detect_throws(self, img, frame):
         # Initialization of the frame
         img_color, mask = find_colors(img, self.hsv_val)
         img_contours, contours = cvzone.findContours(img, mask, minArea=self.min_area)
-
-        cv2.rectangle(frame, (self.x_left, self.y_left), (self.x_right, self.y_right), (0, 255, 0), 5)
-        cv2.rectangle(frame, (self.x_left + 10, self.y_left - 50), (self.x_right + 10, self.y_right - 50), (0, 255, 0), 5)
 
         # Ball detected
         if contours:
@@ -84,11 +77,12 @@ class Detection:
             self.pos_list_y.append(ball_y)
 
             # Condition to check if it is a new throw
-            # self.posListX[-2] is the last point of the path of last throw,
-            # self.posListX[-1] is the first point of the path of the new throw
             if len(self.pos_list_x) > 1:
-                if self.pos_list_x[-2] <= self.half_frame_x <= self.pos_list_x[-1]:
-                    # print(self.payload)
+                half_frame_x = self.max_limit_x / 2
+
+                # self.posListX[-2] is the last point of the path of last throw,
+                # self.posListX[-1] is the first point of the path of the new throw
+                if self.pos_list_x[-2] <= half_frame_x <= self.pos_list_x[-1]:
                     self.set_new_throw()
 
             # If the ball is above the high of the hoop
@@ -130,8 +124,6 @@ class Detection:
             self.increment_throw_position(3)
         elif 140 < y_position <= 250:
             self.increment_throw_position(4)
-        else:
-            self.increment_throw_position(0)
 
     def print_dots(self, img_contours):
         if self.was_successful == 1:
@@ -156,8 +148,8 @@ class Detection:
 
     def save_throw(self, img_contours):
         throw_counter = self.payload['totalThrows']
-        # pri = 'Frames'
-        current_frame = f'{frames_path}/{self.training_program_id}-frame{throw_counter}.jpg'
+        # frames_path = 'Frames'
+        current_frame = f'{frames_path}/frame{throw_counter}.jpg'
         if throw_counter > 0:
             cv2.imwrite(current_frame, img_contours)
 
@@ -168,7 +160,7 @@ class Detection:
         while True:
             success, img = cap.read()
             if success:
-                # Frame is the entire image and image is the hoop zone in the frame
+                # Frame is the entire image and image is the hook zone in the frame
                 frame = img
                 img = img[self.min_limit_y:self.max_limit_y, self.min_limit_x:self.max_limit_x]
                 imageContours = self.detect_throws(img, frame)
@@ -202,8 +194,6 @@ class Detection:
         return self.payload
 
     def set_new_throw(self):
-        # plt.plot(self.pos_list_x[0:-1], self.pos_list_y[0:-1])
-        # plt.show()
         new_throw_first_point = (self.pos_list_x[-1], self.pos_list_y[-1])
         self.was_successful = 0
         # Clean positions of last throw
@@ -220,8 +210,6 @@ class Detection:
         self.minimal_x = self.max_limit_x
         self.count_min_x = 0
 
-    # Checks if its a throw. Compares the current ball position with the previous one
-    # to determine if the ball is getting closer to the hoop
     def check_throw(self, ball_x):
         if ball_x < self.minimal_x:
             self.minimal_x = ball_x
