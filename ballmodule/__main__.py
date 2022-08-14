@@ -5,20 +5,21 @@ from ballmodule.utils.utils import send_results, send_frames, delete_frames
 
 
 def main():
-    # Minimum request
     if len(sys.argv) > 1:
         token = sys.argv[1]
         training_program_id = sys.argv[2]
         min_request_positions = sys.argv[3][0:len(sys.argv[3])].split(',')
+        title = ''
+        for i in range(4, len(sys.argv)):
+            title += sys.argv[i] + ' '
+        title = title[:-1]
     else:
         raise Exception("Not enough arguments specified")
-    ballModule = Detection(training_program_id, min_request_positions)
+    ballModule = Detection(training_program_id, min_request_positions, title)
     payload = ballModule.get_payload()
     try:
         ballModule.open_video()
-        # For checking, prints the last throw also#####
         ballModule.set_new_throw()
-        ##################
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
     finally:

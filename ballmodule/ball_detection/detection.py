@@ -1,20 +1,20 @@
 import pathlib
 import cv2
 import cvzone
+
 from ballmodule import config
+from ballmodule.configs.db_connection import get_database
 from ballmodule.utils.utils import find_colors, frames_path
-import time
-
-
-# import matplotlib.pyplot as plt
 
 
 class Detection:
-    def __init__(self, training_program_id, min_request_positions):
+    def __init__(self, training_program_id, min_request_positions, title):
+        get_database()
         self.current_position = 0
         self.training_program_id = training_program_id
         self.payload = {
             "id": training_program_id,
+            "title": title,
             "counterThrowPos1": 0,
             "successfulThrowPos1": 0,
             "counterThrowPos2": 0,
@@ -74,66 +74,71 @@ class Detection:
         img_color, mask = find_colors(img, self.hsv_val)
         img_contours, contours = cvzone.findContours(img, mask, minArea=self.min_area)
 
-        cv2.rectangle(frame, (self.x_left, self.y_left), (self.x_right, self.y_right), (0, 255, 0), 5)
-        cv2.rectangle(frame, (self.x_left + 10, self.y_left - 50), (self.x_right + 10, self.y_right - 50), (0, 255, 0), 5)
+        try:
+            # Ball detected
+            if contours:
+                ball_x, ball_y = contours[0]['center']
+                self.pos_list_x.append(ball_x)
+                self.pos_list_y.append(ball_y)
 
-        # Ball detected
-        if contours:
-            ball_x, ball_y = contours[0]['center']
-            self.pos_list_x.append(ball_x)
-            self.pos_list_y.append(ball_y)
+                # Condition to check if it is a new throw
+                # self.posListX[-2] is the last point of the path of last throw,
+                # self.posListX[-1] is the first point of the path of the new throw
+                if len(self.pos_list_x) > 1:
+                    if self.pos_list_x[-2] <= self.half_frame_x <= self.pos_list_x[-1]:
+                        # print(self.payload)
+                        self.set_new_throw()
 
-            # Condition to check if it is a new throw
-            # self.posListX[-2] is the last point of the path of last throw,
-            # self.posListX[-1] is the first point of the path of the new throw
-            if len(self.pos_list_x) > 1:
-                if self.pos_list_x[-2] <= self.half_frame_x <= self.pos_list_x[-1]:
-                    # print(self.payload)
-                    self.set_new_throw()
+                # If the ball is above the high of the hoop
+                if ball_y < self.y_hoop:
+                    self.check_throw(ball_x)
+                    # If the ball passed above the hoop it has a possibility to success
+                    if self.x_left + 10 <= ball_x <= self.x_right + 10 and self.y_left - 50 <= ball_y <= self.y_right - 50:
+                        self.possible_success = 1
+                # The ball is bellow the high of the hoop
+                else:
+                    # The ball is bellow the imaginary successful rectangle bellow the hoop
+                    # No possible success throw, and the throw is close to finish or is done
+                    if ball_y >= self.y_right:
+                        self.is_throw = 0
+                        self.possible_success = 0
+                    # Verify that the ball passes through the imaginary rectangle above the hoop
+                    if self.x_left <= ball_x <= self.x_right and self.y_left <= ball_y <= self.y_right \
+                            and self.is_throw == 1 and self.possible_success == 1:
+                        print(ball_x, ball_y)
+                        self.ball_bbox_positions.append((ball_x, ball_y))
+                    # Throw is released, re-initializing all variables.
+                    self.minimal_x = self.max_limit_x
+                    self.count_min_x = 0
+                    # Position list holds at least 2 positions inside the imaginary rectangle bellow the hoop
+                    if len(self.ball_bbox_positions) > 1:
+                        self.write_throw_and_clean()
 
-            # If the ball is above the high of the hoop
-            if ball_y < self.y_hoop:
-                self.check_throw(ball_x)
-                # If the ball passed above the hoop it has a possibility to success
-                if self.x_left + 10 <= ball_x <= self.x_right + 10 and self.y_left - 50 <= ball_y <= self.y_right - 50:
-                    self.possible_success = 1
-            # The ball is bellow the high of the hoop
-            else:
-                # The ball is bellow the imaginary successful rectangle bellow the hoop
-                # No possible success throw, and the throw is close to finish or is done
-                if ball_y >= self.y_right:
-                    self.is_throw = 0
-                    self.possible_success = 0
-                # Verify that the ball passes through the imaginary rectangle above the hoop
-                if self.x_left <= ball_x <= self.x_right and self.y_left <= ball_y <= self.y_right \
-                        and self.is_throw == 1 and self.possible_success == 1:
-                    self.ball_bbox_positions.append((ball_x, ball_y))
-                # Throw is released, re-initializing all variables.
-                self.minimal_x = self.max_limit_x
-                self.count_min_x = 0
-                # Position list holds at least 2 positions inside the imaginary rectangle bellow the hoop
-                if len(self.ball_bbox_positions) > 1:
-                    self.write_throw_and_clean()
+            self.print_dots(frame)
 
-        self.print_dots(frame)
-
-        if len(self.pos_list_x):
-            if self.pos_list_y[-1] >= self.y_right or self.pos_list_x[-1] <= self.x_hoop:
-                self.save_throw(frame)
-        return img_contours
+            if len(self.pos_list_x):
+                if self.pos_list_y[-1] >= self.y_right or self.pos_list_x[-1] <= self.x_hoop:
+                    self.save_throw(frame)
+            return mask, img_contours
+        except KeyboardInterrupt:
+            print(f'The ball is not recognized due to KeyboardInterrupt')
 
     def set_throw_position(self):
+        """Checks from which position the throw comes from"""
         y_position = self.pos_list_y[0]
+        if 0 <= y_position < 15:
+            self.increment_throw_position(1)
         if 15 <= y_position <= 75:
             self.increment_throw_position(2)
         elif 75 < y_position <= 140:
             self.increment_throw_position(3)
         elif 140 < y_position <= 250:
             self.increment_throw_position(4)
-        else:
-            self.increment_throw_position(0)
+        elif 250 < y_position:
+            self.increment_throw_position(5)
 
     def print_dots(self, img_contours):
+        """Prints the ball path"""
         if self.was_successful == 1:
             color = (0, 255, 0)
         else:
@@ -142,6 +147,7 @@ class Detection:
             cv2.circle(img_contours, (posX + self.min_limit_x, posY + self.min_limit_y), 5, color, cv2.FILLED)
 
     def write_throw_and_clean(self):
+        """It was a successful throw. Another throw will start"""
         self.was_successful = 1
         self.possible_success = 0
         self.is_throw = 0
@@ -155,14 +161,13 @@ class Detection:
         return self.video_name, self.min_limit_y, self.max_limit_y, self.min_limit_x, self.max_limit_x
 
     def save_throw(self, img_contours):
+        """Saves the throw frame in a folder"""
         throw_counter = self.payload['totalThrows']
-        # pri = 'Frames'
         current_frame = f'{frames_path}/{self.training_program_id}-frame{throw_counter}.jpg'
         if throw_counter > 0:
             cv2.imwrite(current_frame, img_contours)
 
     def open_video(self):
-        # for video in self.videoName:
         cap = cv2.VideoCapture(f'{self.video_name}')
 
         while True:
@@ -171,8 +176,8 @@ class Detection:
                 # Frame is the entire image and image is the hoop zone in the frame
                 frame = img
                 img = img[self.min_limit_y:self.max_limit_y, self.min_limit_x:self.max_limit_x]
-                imageContours = self.detect_throws(img, frame)
-                cv2.imshow("ImageColor", frame)
+                mask, image_contours = self.detect_throws(img, frame)
+                cv2.imshow("Live", frame)
                 cv2.waitKey(1)
             else:
                 break
@@ -180,30 +185,43 @@ class Detection:
         cv2.destroyAllWindows()
 
     def increment_success_position(self):
+        """Increments the position counter if there was a successful throw"""
         success_position = self.current_position
-        if success_position == 2:
+        if success_position == 1:
+            self.payload['successfulThrowPos1'] += 1
+        elif success_position == 2:
             self.payload['successfulThrowPos2'] += 1
         elif success_position == 3:
             self.payload['successfulThrowPos3'] += 1
         elif success_position == 4:
             self.payload['successfulThrowPos4'] += 1
+        elif success_position == 5:
+            self.payload['successfulThrowPos5'] += 1
+        elif success_position == 6:
+            self.payload['successfulThrowPos6'] += 1
 
     def increment_throw_position(self, position):
+        """Increments the position number where the shot comes from"""
         self.current_position = position
-        if position == 2:
+        if position == 1:
+            self.payload['counterThrowPos1'] += 1
+        elif position == 2:
             self.payload['counterThrowPos2'] += 1
         elif position == 3:
             self.payload['counterThrowPos3'] += 1
         elif position == 4:
             self.payload['counterThrowPos4'] += 1
+        elif position == 5:
+            self.payload['counterThrowPos5'] += 1
+        elif position == 6:
+            self.payload['counterThrowPos6'] += 1
         self.payload['totalThrows'] += 1
 
     def get_payload(self):
         return self.payload
 
     def set_new_throw(self):
-        # plt.plot(self.pos_list_x[0:-1], self.pos_list_y[0:-1])
-        # plt.show()
+        """Resets the throw variables in order to start a new throw"""
         new_throw_first_point = (self.pos_list_x[-1], self.pos_list_y[-1])
         self.was_successful = 0
         # Clean positions of last throw
@@ -220,9 +238,9 @@ class Detection:
         self.minimal_x = self.max_limit_x
         self.count_min_x = 0
 
-    # Checks if its a throw. Compares the current ball position with the previous one
-    # to determine if the ball is getting closer to the hoop
     def check_throw(self, ball_x):
+        """Checks if its a throw. Compares the current ball position with the previous one to determine if the ball
+        is getting closer to the hoop"""
         if ball_x < self.minimal_x:
             self.minimal_x = ball_x
             self.count_min_x += 1

@@ -25,14 +25,15 @@ def open_configuration_to_write(new_file):
 def send_results(payload, token):
     print('payload', payload)
     try:
-        # res = requests.post('http://allinnet.online/api/training/results', data=payload, headers={
-        #     "x-access-token": token
-        # })
-        res = requests.post('http://localhost:5001/api/training/results', data=payload, headers={
+        res = requests.post('http://allinnet.online/api/training/results', data=payload, headers={
             "x-access-token": token
         })
         print(res.text)
-    except requests.exceptions.RequestException as e:  # This is the correct syntax
+        print('{')
+        for key, value in payload.items():
+            print(f'\t{key}, {value}')
+        print('}')
+    except requests.exceptions.RequestException as e:
         raise SystemExit(e)
 
 
@@ -45,13 +46,12 @@ def send_frames(training_program_id, token):
             if os.path.isfile(f):
                 file = ('multi-files', (f, open(f, 'rb'), 'image/jpg'))
                 multiple_files.append(file)
-        res = requests.post('http://localhost:5001/api/training/results/upload', files=multiple_files, headers={
+        res = requests.post('http://allinnet.online:5001/api/training/results/upload', files=multiple_files, headers={
             "x-access-token": token,
             "programId": training_program_id
         })
-        # res = requests.post('http://allinnet.online:5001/api/training/results/upload', files=multiple_files)
         print(res.text)
-    except requests.exceptions.RequestException as e:  # This is the correct syntax
+    except requests.exceptions.RequestException as e:
         raise SystemExit(e)
 
 
@@ -65,7 +65,6 @@ def find_colors(img, hsv_val):
 
 def delete_frames():
     files = glob.glob(f'{frames_path}/*.jpg')
-
     for f in files:
         try:
             os.remove(f)
